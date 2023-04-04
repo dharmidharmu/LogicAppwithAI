@@ -1,0 +1,16 @@
+{
+  "managedApiConnections": {
+      "servicebus": {
+          "api": {
+              "id": "/subscriptions/<subscription_id>/providers/Microsoft.Web/locations/eastus/managedApis/servicebus"
+          },
+          "authentication": {
+              "type": "ManagedServiceIdentity"
+          },
+          "connection": {
+              "id": "/subscriptions/<subscription_id>/resourceGroups/cognitiveservice001/providers/Microsoft.Web/connections/servicebus"
+          },
+          "connectionRuntimeUrl": "https://515c0158c6f65f10.14.common.logic-eastus.azure-apihub.net/apim/servicebus/d890f35b30c049b7b23385707f9ba4a0"
+      }
+  }
+}

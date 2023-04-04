@@ -1,0 +1,6 @@
+{
+  "CognitiveServiceKey": {
+      "type": "String",
+      "value": "@appsetting('CognitiveServiceKey')"
+  }
+}

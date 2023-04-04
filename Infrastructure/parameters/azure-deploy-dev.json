@@ -1,0 +1,56 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "ASP_LA001": {
+            "value": {
+              "name": "asp-dev-azure-blogathon-la-001",
+              "skuname": "WS1",
+              "skutier": "WorkflowStandard",
+              "kind": "elastic"
+            }
+        },
+        "SA_LA001": {
+            "value": {
+              "name": "sadevazureblogathon001",
+              "skuname": "Standard_LRS",
+              "kind": "StorageV2"
+            }
+        },
+        "LogicApp_LA001": {
+            "value": {
+              "name": "logicapp-azure-blogathon-001",
+              "kind": "functionapp,workflowapp",
+              "appsettings": {
+                "Environment": "dev"
+              }
+            }
+        },
+        "logAnalyticsWorkspace_name": {
+            "value": "law-dev-azure-blogathon-001"
+        },
+        "applicationInsights_name": {
+            "value": "ai-dev-azure-blogathon-001"
+        },
+        "keyVault_name": {
+            "value": "kvdevazureblogathon001"
+        },
+        "serviceBus": {
+            "value": {
+              "name": "sb-dev-azure-blogathon-001",
+              "skuName": "Basic",
+              "skuTier": "Basic"
+            }
+        },
+        "serviceBusQueues": {
+            "value": ["sbq-messages"]
+        },
+        "cognitiveservice_content": {
+            "value": {
+              "name": "contentmoderator-cogservice",
+              "kind": "ContentModerator",
+              "skuName": "F0"
+            }
+        }
+    }
+}

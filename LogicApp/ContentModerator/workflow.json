@@ -1,0 +1,122 @@
+{
+    "definition": {
+        "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+        "actions": {
+            "Condition": {
+                "actions": {},
+                "else": {
+                    "actions": {
+                        "Complete_the_message_in_a_queue": {
+                            "inputs": {
+                                "host": {
+                                    "connection": {
+                                        "referenceName": "servicebus"
+                                    }
+                                },
+                                "method": "delete",
+                                "path": "/@{encodeURIComponent(encodeURIComponent('sbq-messages'))}/messages/complete",
+                                "queries": {
+                                    "lockToken": "@triggerBody()?['LockToken']",
+                                    "queueType": "Main",
+                                    "sessionId": ""
+                                }
+                            },
+                            "runAfter": {},
+                            "type": "ApiConnection"
+                        }
+                    }
+                },
+                "expression": {
+                    "and": [
+                        {
+                            "equals": [
+                                "",
+                                true
+                            ]
+                        }
+                    ]
+                },
+                "runAfter": {
+                    "Initialize_variable_-_Result": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "If"
+            },
+            "HTTP": {
+                "inputs": {
+                    "body": "@variables('Content')",
+                    "headers": {
+                        "Content-Type": "text/plain",
+                        "Ocp-Apim-Subscription-Key": "@parameters('CognitiveServiceKey')"
+                    },
+                    "method": "POST",
+                    "uri": "https://contentmoderator-cogservice.cognitiveservices.azure.com/contentmoderator/moderate/v1.0/ProcessText/Screen?classify=True&language=eng"
+                },
+                "runAfter": {
+                    "Initialize_variable": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "Http"
+            },
+            "Initialize_variable": {
+                "inputs": {
+                    "variables": [
+                        {
+                            "name": "Content",
+                            "type": "string",
+                            "value": "@base64ToString(triggerBody()?['ContentData'])"
+                        }
+                    ]
+                },
+                "runAfter": {},
+                "type": "InitializeVariable"
+            },
+            "Initialize_variable_-_Result": {
+                "inputs": {
+                    "variables": [
+                        {
+                            "name": "Result",
+                            "type": "object",
+                            "value": "@body('HTTP')"
+                        }
+                    ]
+                },
+                "runAfter": {
+                    "HTTP": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "InitializeVariable"
+            }
+        },
+        "contentVersion": "1.0.0.0",
+        "outputs": {},
+        "triggers": {
+            "When_one_or_more_messages_arrive_in_a_queue_(peek-lock)": {
+                "inputs": {
+                    "host": {
+                        "connection": {
+                            "referenceName": "servicebus"
+                        }
+                    },
+                    "method": "get",
+                    "path": "/@{encodeURIComponent(encodeURIComponent('sbq-messages'))}/messages/batch/head/peek",
+                    "queries": {
+                        "maxMessageCount": 20,
+                        "queueType": "Main",
+                        "sessionId": "None"
+                    }
+                },
+                "recurrence": {
+                    "frequency": "Second",
+                    "interval": 15
+                },
+                "splitOn": "@triggerBody()",
+                "type": "ApiConnection"
+            }
+        }
+    },
+    "kind": "Stateful"
+}
