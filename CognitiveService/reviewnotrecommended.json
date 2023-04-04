@@ -1,0 +1,25 @@
+{
+  "OriginalText": "Wow! This is the Great Article",
+  "NormalizedText": "Wow!    Great Article",
+  "Misrepresentation": null,
+  "Classification": {
+    "ReviewRecommended": false,
+    "Category1": {
+      "Score": 0.009495570324361324
+    },
+    "Category2": {
+      "Score": 0.21802674233913422
+    },
+    "Category3": {
+      "Score": 0.09152884781360626
+    }
+  },
+  "Language": "eng",
+  "Terms": null,
+  "Status": {
+    "Code": 3000,
+    "Description": "OK",
+    "Exception": null
+  },
+  "TrackingId": "262b2514-5ef8-4cd8-b1b5-c4fc052fbf41"
+}

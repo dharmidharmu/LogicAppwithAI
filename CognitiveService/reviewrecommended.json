@@ -1,0 +1,25 @@
+{
+  "OriginalText": "I will kill him",
+  "NormalizedText": "I  kill ",
+  "Misrepresentation": null,
+  "Classification": {
+    "ReviewRecommended": true,
+    "Category1": {
+      "Score": 0.10625319182872772
+    },
+    "Category2": {
+      "Score": 0.2392565757036209
+    },
+    "Category3": {
+      "Score": 0.7479158639907837
+    }
+  },
+  "Language": "eng",
+  "Terms": null,
+  "Status": {
+    "Code": 3000,
+    "Description": "OK",
+    "Exception": null
+  },
+  "TrackingId": "cd6eb559-5ea3-4feb-a159-9474c21f45d5"
+}
