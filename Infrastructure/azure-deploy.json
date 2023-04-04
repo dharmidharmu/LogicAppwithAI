@@ -1,0 +1,371 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "ASP_LA001": {
+      "type": "object",
+      "defaultValue": {
+        "name": "asp-dev-azure-blogathon-la-001",
+        "skuname": "WS1",
+        "skutier": "WorkflowStandard",
+        "kind": "elastic"
+      },
+      "metadata": {
+        "description": "App Service Details for Logicapp LA001"
+      }
+    },
+    "SA_LA001": {
+      "type": "object",
+      "defaultValue": {
+        "name": "sadevazureblogathon001",
+        "skuname": "Standard_LRS",
+        "kind": "StorageV2"
+      },
+      "metadata": {
+        "description": "StorageAccount for LogicApp LA001"
+      }
+    },
+    "LogicApp_LA001": {
+      "type": "object",
+      "defaultValue": {
+        "name": "logicapp-azure-blogathon-001",
+        "kind": "functionapp,workflowapp",
+        "appsettings": {
+          "Environment": "dev"
+        }
+      },
+      "metadata": {
+        "description": "Logic App Configuration: LA001"
+      }
+    },
+    "logAnalyticsWorkspace_name": {
+      "type": "string",
+      "defaultValue": "law-dev-azure-blogathon-001",
+      "metadata": {
+        "description": "Name of the Log Analytics WorkSpace"
+      }
+    },
+
+    "applicationInsights_name": {
+      "type": "string",
+      "defaultValue": "ai-dev-azure-blogathon-001",
+      "metadata": {
+        "description": "Name of the Application Insights"
+      }
+    },
+    "keyVault_name": {
+      "type": "string",
+      "defaultValue": "kv-dev-azure-blogathon-001",
+      "metadata": {
+        "description": "KeyVault Name"
+      }
+    },
+    "serviceBus": {
+      "type": "object",
+      "defaultValue": {
+        "name": "sb-dev-azure-blogathon-001",
+        "skuName": "Basic",
+        "skuTier": "Basic"
+      }
+    },
+    "serviceBusQueues": {
+      "type": "array",
+      "defaultValue": ["sbq-messages"]
+    },
+    "cognitiveservice_content": {
+      "type": "object",
+      "defaultValue": {
+        "name": "contentmoderator-cogservice",
+        "kind": "ContentModerator",
+        "skuName": "F0"
+      }
+    }
+  },
+  "variables": {},
+  "resources": [
+    // App Service Plan for LA001
+    {
+      "type": "Microsoft.Web/serverfarms",
+      "apiVersion": "2022-03-01",
+      "name": "[parameters('ASP_LA001').name]",
+      "location": "[resourceGroup().location]",
+      "sku": {
+        "name": "[parameters('ASP_LA001').skuname]",
+        "tier": "[parameters('ASP_LA001').skutier]"
+      },
+      "kind": "[parameters('ASP_LA001').kind]",
+      "properties": {
+        "reserved": false
+      }
+    },
+    // Storage Account for LA001
+    {
+      "type": "Microsoft.Storage/storageAccounts",
+      "apiVersion": "2022-05-01",
+      "name": "[parameters('SA_LA001').name]",
+      "location": "[resourceGroup().location]",
+      "sku": {
+        "name": "[parameters('SA_LA001').skuname]"
+      },
+      "kind": "[parameters('SA_LA001').kind]",
+      "properties": {
+        "dnsEndpointType": "Standard",
+        "defaultToOAuthAuthentication": false,
+        "publicNetworkAccess": "Enabled",
+        "allowCrossTenantReplication": true,
+        "minimumTlsVersion": "TLS1_2",
+        "allowBlobPublicAccess": true,
+        "allowSharedKeyAccess": true,
+        "networkAcls": {
+          "bypass": "AzureServices",
+          "virtualNetworkRules": [],
+          "ipRules": [],
+          "defaultAction": "Allow"
+        },
+        "supportsHttpsTrafficOnly": true,
+        "encryption": {
+          "requireInfrastructureEncryption": false,
+          "services": {
+            "file": {
+              "keyType": "Account",
+              "enabled": true
+            },
+            "blob": {
+              "keyType": "Account",
+              "enabled": true
+            }
+          },
+          "keySource": "Microsoft.Storage"
+        },
+        "accessTier": "Hot"
+      }
+    },
+    // Log Analytics Workspace
+    {
+      "type": "microsoft.operationalinsights/workspaces",
+      "apiVersion": "2021-12-01-preview",
+      "name": "[parameters('logAnalyticsWorkspace_name')]",
+      "location": "[resourceGroup().location]",
+      "properties": {
+        "sku": {
+          "name": "pergb2018"
+        },
+        "retentionInDays": 30,
+        "features": {
+          "enableLogAccessUsingOnlyResourcePermissions": true
+        },
+        "workspaceCapping": {
+          "dailyQuotaGb": -1
+        },
+        "publicNetworkAccessForIngestion": "Enabled",
+        "publicNetworkAccessForQuery": "Enabled"
+      }
+    },
+    // Application Insights
+    {
+      "type": "microsoft.insights/components",
+      "apiVersion": "2020-02-02",
+      "name": "[parameters('applicationInsights_name')]",
+      "location": "[resourceGroup().location]",
+      "dependsOn": [
+        "[resourceId('microsoft.operationalinsights/workspaces', parameters('logAnalyticsWorkspace_name'))]"
+      ],
+      "kind": "web",
+      "properties": {
+        "Application_Type": "web",
+        "Flow_Type": "Redfield",
+        "Request_Source": "IbizaAIExtension",
+        "RetentionInDays": 90,
+        "WorkspaceResourceId": "[resourceId('microsoft.operationalinsights/workspaces', parameters('logAnalyticsWorkspace_name'))]",
+        "IngestionMode": "LogAnalytics",
+        "publicNetworkAccessForIngestion": "Enabled",
+        "publicNetworkAccessForQuery": "Enabled"
+      }
+    },
+    // Logic App LA001
+    {
+      "type": "Microsoft.Web/sites",
+      "apiVersion": "2022-03-01",
+      "name": "[parameters('LogicApp_LA001').name]",
+      "location": "[resourceGroup().location]",
+      "identity": {
+        "type": "SystemAssigned"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/serverfarms', parameters('ASP_LA001').name)]",
+        "[resourceId('microsoft.operationalinsights/workspaces', parameters('logAnalyticsWorkspace_name'))]",
+        "[resourceId('microsoft.insights/components/', parameters('applicationInsights_name'))]",
+        "[resourceId('Microsoft.Storage/storageAccounts', parameters('SA_LA001').name)]"
+      ],
+      "kind": "[parameters('LogicApp_LA001').kind]",
+      "properties": {
+        "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', parameters('ASP_LA001').name)]",
+        "siteConfig": {
+          "appSettings": [
+            {
+              "name": "APPINSIGHTS_INSTRUMENTATIONKEY",
+              "value": "[reference(resourceId('Microsoft.Insights/components', parameters('applicationInsights_name')), '2020-02-02').InstrumentationKey]"
+            },
+            {
+              "name": "AzureWebJobsStorage",
+              "value": "[format('DefaultEndpointsProtocol=https;AccountName={0};AccountKey={1}', parameters('SA_LA001').name, listKeys(resourceId('Microsoft.Storage/storageAccounts', parameters('SA_LA001').name), '2017-06-01').keys[0].value)]"
+            },
+            {
+              "name": "WEBSITE_CONTENTAZUREFILECONNECTIONSTRING",
+              "value": "[format('DefaultEndpointsProtocol=https;AccountName={0};AccountKey={1}', parameters('SA_LA001').name, listKeys(resourceId('Microsoft.Storage/storageAccounts', parameters('SA_LA001').name), '2017-06-01').keys[0].value)]"
+            },
+            {
+              "name": "WEBSITE_CONTENTSHARE",
+              "value": "[toLower(parameters('LogicApp_LA001').name)]"
+            },
+            {
+              "name": "FUNCTIONS_EXTENSION_VERSION",
+              "value": "~4"
+            },
+            {
+              "name": "FUNCTIONS_WORKER_RUNTIME",
+              "value": "node"
+            },
+            {
+              "name": "WEBSITE_TIME_ZONE",
+              "value": "UTC"
+            },
+            {
+              "name": "WEBSITE_NODE_DEFAULT_VERSION",
+              "value": "~14"
+            },
+            {
+              "name": "AzureFunctionsJobHost__extensionBundle__id",
+              "value": "Microsoft.Azure.Functions.ExtensionBundle.Workflows"
+            },
+            {
+              "name": "AzureFunctionsJobHost__extensionBundle__version",
+              "value": "[1.*, 2.0.0)"
+            },
+            {
+              "name": "APP_KIND",
+              "value": "workflowApp"
+            },
+            {
+              "name": "WORKFLOWS_LOCATION_NAME",
+              "value": "[resourceGroup().location]",
+              "slotSetting": false
+            },
+            {
+              "name": "WORKFLOWS_RESOURCE_GROUP_NAME",
+              "value": "[resourceGroup().name]",
+              "slotSetting": false
+            },
+            {
+              "name": "WORKFLOWS_SUBSCRIPTION_ID",
+              "value": "[subscription().subscriptionId]",
+              "slotSetting": false
+            },
+            {
+              "name": "WORKFLOWS_TENANT_ID",
+              "value": "[subscription().tenantId]",
+              "slotSetting": false
+            },
+            {
+              "name": "Environment",
+              "value": "[parameters('LogicApp_LA001').appsettings.Environment]"
+            }
+          ]
+        },
+        "keyVaultReferenceIdentity": "SystemAssigned"
+      }
+    },
+    // KeyVault Kv001
+    {
+      "type": "Microsoft.KeyVault/vaults",
+      "apiVersion": "2022-07-01",
+      "name": "[parameters('keyVault_name')]",
+      "location": "[resourceGroup().location]",
+      "properties": {
+        "sku": {
+          "family": "A",
+          "name": "Standard"
+        },
+        "accessPolicies": [],
+        "tenantId": "[subscription().tenantId]",
+        "enabledForDeployment": false,
+        "enabledForDiskEncryption": false,
+        "enabledForTemplateDeployment": false,
+        "enableSoftDelete": true,
+        "softDeleteRetentionInDays": 90,
+        "enableRbacAuthorization": false,
+        "provisioningState": "Succeeded",
+        "publicNetworkAccess": "Enabled"
+      }
+    },
+    // ServiceBus
+    {
+      "type": "Microsoft.ServiceBus/namespaces",
+      "apiVersion": "2022-01-01-preview",
+      "name": "[parameters('serviceBus').name]",
+      "location": "[resourceGroup().location]",
+      "sku": {
+        "name": "[parameters('serviceBus').skuName]",
+        "tier": "[parameters('serviceBus').skuTier]"
+      },
+      "properties": {
+        "minimumTlsVersion": "1.2",
+        "publicNetworkAccess": "Enabled",
+        "disableLocalAuth": false,
+        "zoneRedundant": false
+      }
+    },
+    // ServiceBus Queue
+    {
+      "name": "[concat(parameters('serviceBus').name, '/', parameters('serviceBusQueues')[copyIndex()])]",
+      "type": "Microsoft.ServiceBus/namespaces/queues",
+      "apiVersion": "2021-01-01-preview",
+      "dependsOn": [
+        "[resourceId('Microsoft.ServiceBus/namespaces', parameters('serviceBus').name)]"
+      ],
+      "copy": {
+        "name": "serviceBusQueuesCopy",
+        "count": "[length(parameters('serviceBusQueues'))]"
+      },
+      "properties": {
+        "maxMessageSizeInKilobytes": 256,
+        "lockDuration": "PT30S",
+        "maxSizeInMegabytes": 1024,
+        "requiresDuplicateDetection": false,
+        "requiresSession": false,
+        "defaultMessageTimeToLive": "P14D",
+        "deadLetteringOnMessageExpiration": false,
+        "enableBatchedOperations": true,
+        "duplicateDetectionHistoryTimeWindow": "PT10M",
+        "maxDeliveryCount": 10,
+        "status": "Active",
+        "autoDeleteOnIdle": "P10675199DT2H48M5.4775807S",
+        "enablePartitioning": false,
+        "enableExpress": false
+      }
+    },
+    // Cognitive Services - Content Moderator
+    {
+      "type": "Microsoft.CognitiveServices/accounts",
+      "apiVersion": "2022-12-01",
+      "name": "[parameters('cognitiveservice_content').name]",
+      "location": "eastus",
+      "sku": {
+        "name": "[parameters('cognitiveservice_content').skuName]"
+      },
+      "kind": "[parameters('cognitiveservice_content').kind]",
+      "identity": {
+        "type": "None"
+      },
+      "properties": {
+        "customSubDomainName": "[parameters('cognitiveservice_content').name]",
+        "networkAcls": {
+          "defaultAction": "Allow",
+          "virtualNetworkRules": [],
+          "ipRules": []
+        },
+        "publicNetworkAccess": "Enabled"
+      }
+    }
+  ]
+}
